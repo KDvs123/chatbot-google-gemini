@@ -1,4 +1,5 @@
-import streamlit as st
+# chatbot_app.py
+
 import os
 import pdfplumber
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -8,6 +9,8 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
 import google.generativeai as genai
+from datetime import datetime
+import streamlit as st
 
 # Load environment variables
 load_dotenv()
@@ -17,7 +20,6 @@ api_key = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=api_key)
 
 # Model directory where the single PDF file is located
-
 PDF_FILE_PATH = os.path.join("Workhub24 Support Framework 8c92ec8e015b431dadd90fd771efc070 1.pdf")
 
 def get_pdf_text(pdf_path):
@@ -53,7 +55,7 @@ def get_conversational_chain():
 
     return chain
 
-def user_input(user_question):
+def answer_question(user_question):
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
     new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
     docs = new_db.similarity_search(user_question)
@@ -64,19 +66,49 @@ def user_input(user_question):
     return response["output_text"]
 
 def main():
-    st.set_page_config("Chat PDF")
+    st.set_page_config(page_title="Chat PDF")
     st.header("Chat with PDF using Gemini💁")
 
-    # Load text from the single PDF file
-    raw_text = get_pdf_text(PDF_FILE_PATH)
-    text_chunks = get_text_chunks(raw_text)
-    get_vector_store(text_chunks)
+    # Initialize or load chat history
+    if 'chat_history' not in st.session_state:
+        st.session_state['chat_history'] = []
 
-    user_question = st.text_input("Ask a Question from the PDF File")
+    # Load text from the single PDF file
+    if 'loaded' not in st.session_state:
+        raw_text = get_pdf_text(PDF_FILE_PATH)
+        text_chunks = get_text_chunks(raw_text)
+        get_vector_store(text_chunks)
+        st.session_state['loaded'] = True
+
+    # Display chat messages in a conversational manner
+    bot_logo = 'https://pbs.twimg.com/profile_images/1739538983112048640/4NzIg1h6_400x400.jpg'
+
+    for message in st.session_state['chat_history']:
+        if message["role"] == 'bot':
+            with st.chat_message(message["role"], avatar=bot_logo):
+                st.markdown(message["content"])
+        else:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+    # User input section
+    user_question = st.chat_input("Please ask your question here:")
 
     if user_question:
-        response = user_input(user_question)
-        st.write("Reply: ", response)
+        st.session_state.chat_history.append({"role": "user", "content": user_question})
+        with st.chat_message("user"):
+            st.markdown(user_question)
+
+        response = answer_question(user_question)
+        st.session_state.chat_history.append({"role": "bot", "content": response})
+        with st.chat_message("bot", avatar=bot_logo):
+            st.markdown(response)
+
+    # Acknowledge when user stops entering questions
+    if st.button("End Chat"):
+        st.session_state.chat_history.append({"role": "bot", "content": "Thank you for chatting with me. Have a great day!"})
+        with st.chat_message("bot", avatar=bot_logo):
+            st.markdown("Thank you for chatting with me. Have a great day!")
 
 if __name__ == "__main__":
     main()
