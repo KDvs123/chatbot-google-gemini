@@ -16,31 +16,33 @@ api_key = os.getenv("GOOGLE_API_KEY")
 # Configure the Google Generative AI
 genai.configure(api_key=api_key)
 
-def get_pdf_text(pdf_docs):
-    text = ""
-    for pdf in pdf_docs:
-        with pdfplumber.open(pdf) as pdf_file:
-            for page in pdf_file.pages:
-                text += page.extract_text()
-    return text
+# Model directory where the single PDF file is located
 
+PDF_FILE_PATH = os.path.join("Workhub24 Support Framework 8c92ec8e015b431dadd90fd771efc070 1.pdf")
+
+def get_pdf_text(pdf_path):
+    text = ""
+    with pdfplumber.open(pdf_path) as pdf_file:
+        for page in pdf_file.pages:
+            text += page.extract_text()
+    return text
 
 def get_text_chunks(text):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=10000, chunk_overlap=1000)
     chunks = text_splitter.split_text(text)
     return chunks
 
-
 def get_vector_store(text_chunks):
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
     vector_store = FAISS.from_texts(text_chunks, embedding=embeddings)
     vector_store.save_local("faiss_index")
 
-
 def get_conversational_chain():
     prompt_template = """
-    Context: {context}?
-    Question: {question}
+    Answer the question as detailed as possible from the provided context, make sure to provide all the details, if the answer is not in
+    provided context just say, "answer is not available in the context", don't provide the wrong answer\n\n
+    Context:\n {context}?\n
+    Question: \n{question}\n
 
     Answer:
     """
@@ -50,7 +52,6 @@ def get_conversational_chain():
     chain = load_qa_chain(model, chain_type="stuff", prompt=prompt)
 
     return chain
-
 
 def user_input(user_question):
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
@@ -62,27 +63,20 @@ def user_input(user_question):
     response = chain({"input_documents": docs, "question": user_question}, return_only_outputs=True)
     return response["output_text"]
 
-
 def main():
     st.set_page_config("Chat PDF")
     st.header("Chat with PDF using Gemini💁")
 
-    user_question = st.text_input("Ask a Question from the PDF Files")
+    # Load text from the single PDF file
+    raw_text = get_pdf_text(PDF_FILE_PATH)
+    text_chunks = get_text_chunks(raw_text)
+    get_vector_store(text_chunks)
+
+    user_question = st.text_input("Ask a Question from the PDF File")
 
     if user_question:
         response = user_input(user_question)
         st.write("Reply: ", response)
-
-    with st.sidebar:
-        st.title("Menu:")
-        pdf_docs = st.file_uploader("Upload your PDF Files and Click on the Submit & Process Button", accept_multiple_files=True)
-        if st.button("Submit & Process"):
-            with st.spinner("Processing..."):
-                raw_text = get_pdf_text(pdf_docs)
-                text_chunks = get_text_chunks(raw_text)
-                get_vector_store(text_chunks)
-                st.success("Done")
-
 
 if __name__ == "__main__":
     main()
