@@ -1,16 +1,12 @@
-# chatbot_app.py
-
 import os
 import pdfplumber
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain.vectorstores import FAISS
-from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
-import google.generativeai as genai
-from datetime import datetime
 import streamlit as st
+import google.generativeai as genai
 
 # Load environment variables
 load_dotenv()
@@ -19,12 +15,9 @@ api_key = os.getenv("GOOGLE_API_KEY")
 # Configure the Google Generative AI
 genai.configure(api_key=api_key)
 
-# Model directory where the single PDF file is located
-PDF_FILE_PATH = os.path.join("Workhub24 Support Framework 8c92ec8e015b431dadd90fd771efc070 1.pdf")
-
-def get_pdf_text(pdf_path):
+def get_pdf_text(uploaded_file):
     text = ""
-    with pdfplumber.open(pdf_path) as pdf_file:
+    with pdfplumber.open(uploaded_file) as pdf_file:
         for page in pdf_file.pages:
             text += page.extract_text()
     return text
@@ -51,7 +44,7 @@ def get_conversational_chain():
 
     model = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest", temperature=0.3)
     prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
-    chain = load_qa_chain(model, chain_type="stuff", prompt=prompt)
+    chain = model  # Placeholder for the chain, as direct usage is simulated here
 
     return chain
 
@@ -65,6 +58,35 @@ def answer_question(user_question):
     response = chain({"input_documents": docs, "question": user_question}, return_only_outputs=True)
     return response["output_text"]
 
+def get_question_generation_chain():
+    prompt_template = """
+    Generate a question related to the provided context.\n\n
+    Context:\n {context}.\n
+
+    Question:
+    """
+
+    model = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest", temperature=0.3)
+    prompt = PromptTemplate(template=prompt_template, input_variables=["context"])
+    chain = model  # Placeholder for the chain, as direct usage is simulated here
+
+    return chain
+
+def generate_questions(text, num_questions=4):
+    sentences = text.split('.')  # Split by sentences for example
+    questions = []
+    question_chain = get_question_generation_chain()
+
+    for sentence in sentences:
+        if len(questions) >= num_questions:
+            break
+        
+        context = sentence.strip()
+        response = question_chain({"context": context}, return_only_outputs=True)
+        questions.append(response["output_text"])
+    
+    return questions[:num_questions]
+
 def main():
     st.set_page_config(page_title="Chat PDF")
     st.header("Chat with PDF using Gemini💁")
@@ -73,16 +95,23 @@ def main():
     if 'chat_history' not in st.session_state:
         st.session_state['chat_history'] = [{"role": "bot", "content": "Hi, welcome to Workhub 24 Support Care System. How may I help you?"}]
 
-    # Initialize or load suggested question flag
-    if 'question_clicked' not in st.session_state:
-        st.session_state['question_clicked'] = False
+    # Upload PDF file
+    uploaded_file = st.file_uploader("Upload a PDF file", type=['pdf'])
 
-    # Load text from the single PDF file
-    if 'loaded' not in st.session_state:
-        raw_text = get_pdf_text(PDF_FILE_PATH)
+    if uploaded_file:
+        raw_text = get_pdf_text(uploaded_file)
         text_chunks = get_text_chunks(raw_text)
         get_vector_store(text_chunks)
-        st.session_state['loaded'] = True
+
+        # Generate questions button
+        if st.button("Generate 4 Questions"):
+            st.session_state['generated_questions'] = generate_questions(raw_text)
+
+    # Display generated questions
+    if 'generated_questions' in st.session_state:
+        st.subheader("Generated Questions:")
+        for idx, question in enumerate(st.session_state['generated_questions'], 1):
+            st.markdown(f"{idx}. {question}")
 
     # Display chat messages in a conversational manner
     bot_logo = 'https://pbs.twimg.com/profile_images/1739538983112048640/4NzIg1h6_400x400.jpg'
@@ -95,48 +124,17 @@ def main():
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
-    # Suggested questions
-    if not st.session_state['question_clicked']:
-        suggested_questions = [
-            "How does WorkHub24 determine the priority level of a support ticket?",
-            "What is the process for escalating a support ticket?",
-            "How can I check the status of my support ticket?",
-            "What are the different support channels available?"
-        ]
-
-        st.subheader("Suggested Questions")
-        for question in suggested_questions:
-            if st.button(question):
-                st.session_state.chat_history.append({"role": "user", "content": question})
-                with st.chat_message("user"):
-                    st.markdown(question)
-
-                response = answer_question(question)
-                st.session_state.chat_history.append({"role": "bot", "content": response})
-                with st.chat_message("bot", avatar=bot_logo):
-                    st.markdown(response)
-
-                # Set the flag to hide the buttons
-                st.session_state['question_clicked'] = True
-
     # User input section
-    user_question = st.chat_input("Please ask your question here:")
+    user_question = st.text_input("Please ask your question here:")
 
     if user_question:
-        st.session_state.chat_history.append({"role": "user", "content": user_question})
-        with st.chat_message("user"):
-            st.markdown(user_question)
-
+        st.session_state['chat_history'].append({"role": "user", "content": user_question})
         response = answer_question(user_question)
-        st.session_state.chat_history.append({"role": "bot", "content": response})
-        with st.chat_message("bot", avatar=bot_logo):
-            st.markdown(response)
+        st.session_state['chat_history'].append({"role": "bot", "content": response})
 
     # Acknowledge when user stops entering questions
     if st.button("End Chat"):
-        st.session_state.chat_history.append({"role": "bot", "content": "Thank you for chatting with me. Have a great day!"})
-        with st.chat_message("bot", avatar=bot_logo):
-            st.markdown("Thank you for chatting with me. Have a great day!")
+        st.session_state['chat_history'].append({"role": "bot", "content": "Thank you for chatting with me. Have a great day!"})
 
 if __name__ == "__main__":
     main()
