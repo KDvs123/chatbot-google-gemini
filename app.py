@@ -67,7 +67,7 @@ def answer_question(user_question):
 
 def main():
     st.set_page_config(page_title="Chat PDF")
-    st.header("Chat with PDF using Gemini💁")
+    st.header("Workhub 24 Support Assistant💁")
 
     # Initialize or load chat history
     if 'chat_history' not in st.session_state:

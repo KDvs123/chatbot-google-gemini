@@ -53,11 +53,9 @@ def generate_questions(pdf_text, num_questions=4):
 
     try:
         for _ in range(num_questions):
-            question = model.invoke(prompt.format(text=pdf_text))
-            if isinstance(question, dict) and 'content' in question:
-                questions.append(question['content'])
-            else:
-                questions.append(question)
+            response = model.invoke(prompt.format(text=pdf_text))
+            question_content = response['content'] if isinstance(response, dict) and 'content' in response else str(response)
+            questions.append(question_content.strip())
     except Exception as e:
         st.error(f"Error generating question: {e}")
         questions.append("Error generating question")
@@ -104,7 +102,11 @@ def main():
     if 'uploaded_file' in st.session_state:
         # Generate questions button
         if st.button("Generate Questions"):
-            st.session_state['generated_questions'] = generate_questions(get_pdf_text(st.session_state['uploaded_file']))
+            questions = generate_questions(get_pdf_text(st.session_state['uploaded_file']))
+            st.session_state['generated_questions'] = questions
+            for question in questions:
+                st.session_state['chat_history'].append({"role": "bot", "content": question})
+            st.experimental_rerun()
 
     # Display generated questions
     if 'generated_questions' in st.session_state:
