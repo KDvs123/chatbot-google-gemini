@@ -40,7 +40,7 @@ const generateResponse = (incomingChatLi) => {
   }).catch((error)=>{
         messageElement.textContent = "Oops! Something went wrong. Please try again";
 
-  })
+  }).finally(()=>chatbox.scrollTo(0,chatbox.scrollHeight));
 };
 
 const handleChat = () => {
@@ -49,12 +49,16 @@ const handleChat = () => {
 
   // Apend the user's message to the chatbox
   chatbox.appendChild(createChatLi(userMessage, "outgoing"));
+  chatbox.scrollTo(0,chatbox.scrollHeight);
+
 
   setTimeout(() => {
     //Display "Thinking..." message while waiting for the response
     const incomingChatLi=createChatLi("Thinking......", "incoming")
     
     chatbox.appendChild(incomingChatLi);
+    chatbox.scrollTo(0, chatbox.scrollHeight);
+  
     generateResponse(incomingChatLi);
   }, 600);
 };
