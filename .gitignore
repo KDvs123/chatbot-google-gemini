@@ -167,3 +167,8 @@ cython_debug/
 .pdf
 .faiss
 .pkl
+
+
+#ignore config files
+
+config.js
