@@ -1,5 +1,3 @@
-# ml_model.py
-
 import os
 import pdfplumber
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -8,8 +6,8 @@ from langchain.vectorstores import FAISS
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
-import google.generativeai as genai
 from datetime import datetime
+import google.generativeai as genai
 
 # Load environment variables
 load_dotenv()
@@ -41,6 +39,7 @@ def setup_ml_model():
         embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
         vector_store = FAISS.from_texts(text_chunks, embedding=embeddings)
         vector_store.save_local("faiss_index")
+        return vector_store
 
     def get_conversational_chain():
         prompt_template = """
@@ -64,8 +63,11 @@ def setup_ml_model():
 
     def user_input(user_question):
         embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-        new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+        new_db = FAISS.load_local("faiss_index", embeddings)
         docs = new_db.similarity_search(user_question)
+
+        if not docs:
+            raise ValueError(f"No documents found for query: {user_question}")
 
         chain = get_conversational_chain()
 
@@ -83,3 +85,4 @@ def setup_ml_model():
         'PDF_FILE_PATH': PDF_FILE_PATH,
         'chat_history': chat_history 
     }
+
