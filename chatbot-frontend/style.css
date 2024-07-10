@@ -37,7 +37,7 @@ body{
 }
 .show-chatbot .chatbot-toggler{
     transform: rotate(90deg);
-    
+
 }
 .chatbot-toggler span{
     position: absolute;
@@ -144,6 +144,11 @@ body{
 
 }
 
+.chatbox .chat p.error{
+    color: #721c24;
+    background-color: #f8d7da;
+}
+
 .chatbox .chat p{
     white-space: pre-wrap;
 }
@@ -173,6 +178,7 @@ body{
     outline: none;
     font-size: 0.95rem;
     resize: none;
+    max-height: 180px;
     padding: 16px 15px 16px 0;
 
 }

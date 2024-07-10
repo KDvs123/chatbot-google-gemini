@@ -2,9 +2,11 @@ const chatInput = document.querySelector(".chat-input textarea");
 const sendChatBtn = document.querySelector(".chat-input span");
 const chatbox = document.querySelector(".chatbox");
 const chatbotToggler=document.querySelector(".chatbot-toggler");
-
+const chatbotCloseBtn = document.querySelector(".close-btn");
 
 let userMessage;
+const inputInitHeight=chatInput.scrollHeight;
+
 
 
 const createChatLi = (message, className) => {
@@ -41,6 +43,7 @@ const generateResponse = (incomingChatLi) => {
     messageElement.textContent=data.choices[0].message.content;
 
   }).catch((error)=>{
+        messageElement.classList.add("error");
         messageElement.textContent = "Oops! Something went wrong. Please try again";
 
   }).finally(()=>chatbox.scrollTo(0,chatbox.scrollHeight));
@@ -68,8 +71,15 @@ const handleChat = () => {
   }, 600);
 };
 
-
+chatInput.addEventListener("input",()=>{
+  // Adjust the height of the input textarea based on its content
+  chatInput.style.height=`${inputInitHeight}px`;
+  chatInput.style.height = `${chatInput.scrollHeight}px`;
+})
 sendChatBtn.addEventListener("click", handleChat);
+chatbotCloseBtn.addEventListener("click", () =>
+  document.body.classList.remove("show-chatbot")
+);
 chatbotToggler.addEventListener("click", () =>
   document.body.classList.toggle("show-chatbot")
 );
