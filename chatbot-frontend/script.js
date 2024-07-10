@@ -1,16 +1,13 @@
 const chatInput = document.querySelector(".chat-input textarea");
 const sendChatBtn = document.querySelector(".chat-input span");
 const chatbox = document.querySelector(".chatbox");
-const chatbotToggler=document.querySelector(".chatbot-toggler");
+const chatbotToggler = document.querySelector(".chatbot-toggler");
 const chatbotCloseBtn = document.querySelector(".close-btn");
 
 let userMessage;
-const inputInitHeight=chatInput.scrollHeight;
-
-
+const inputInitHeight = chatInput.scrollHeight;
 
 const createChatLi = (message, className) => {
-  // Create a chat <li> element with passed message and class Name
   const chatLi = document.createElement("li");
   chatLi.classList.add("chat", className);
   let chatContent =
@@ -18,68 +15,71 @@ const createChatLi = (message, className) => {
       ? `<p></p>`
       : `<span class="material-symbols-outlined"> smart_toy </span><p></p>`;
   chatLi.innerHTML = chatContent;
-  chatLi.querySelector("p").textContent=message;
+  chatLi.querySelector("p").textContent = message;
   return chatLi;
 };
 
-const generateResponse = (incomingChatLi) => {
-  const API_URL = "https://api.openai.com/v1/chat/completions";
-  const messageElement=incomingChatLi.querySelector("p");
+const generateResponse = (incomingChatLi, userMessage) => {
+  const API_URL = "http://127.0.0.1:5000/ml_model";
+; 
+  const messageElement = incomingChatLi.querySelector("p");
+
   const requestOptions = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`,
     },
     body: JSON.stringify({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: userMessage }],
+      message: userMessage,
     }),
   };
 
-//Send POST request to API , get response
-
-  fetch(API_URL,requestOptions).then(res=>res.json()).then(data=>{
-    messageElement.textContent=data.choices[0].message.content;
-
-  }).catch((error)=>{
-        messageElement.classList.add("error");
-        messageElement.textContent = "Oops! Something went wrong. Please try again";
-
-  }).finally(()=>chatbox.scrollTo(0,chatbox.scrollHeight));
+  fetch(API_URL, requestOptions)
+    .then((res) => res.json())
+    .then((data) => {
+      messageElement.textContent = data.response;
+    })
+    .catch((error) => {
+      messageElement.classList.add("error");
+      messageElement.textContent =
+        "Oops! Something went wrong. Please try again";
+    })
+    .finally(() => chatbox.scrollTo(0, chatbox.scrollHeight));
 };
 
-const handleChat = () => {
-  userMessage = chatInput.value.trim();
+const handleChat = (userMessage) => {
   if (!userMessage) return;
-  chatInput.value="";
+  chatInput.value = "";
 
-
-  // Apend the user's message to the chatbox
   chatbox.appendChild(createChatLi(userMessage, "outgoing"));
-  chatbox.scrollTo(0,chatbox.scrollHeight);
-
+  chatbox.scrollTo(0, chatbox.scrollHeight);
 
   setTimeout(() => {
-    //Display "Thinking..." message while waiting for the response
-    const incomingChatLi=createChatLi("Thinking......", "incoming")
-    
+    const incomingChatLi = createChatLi("Thinking...", "incoming");
     chatbox.appendChild(incomingChatLi);
     chatbox.scrollTo(0, chatbox.scrollHeight);
-  
-    generateResponse(incomingChatLi);
+
+    generateResponse(incomingChatLi, userMessage);
   }, 600);
 };
 
-chatInput.addEventListener("input",()=>{
-  // Adjust the height of the input textarea based on its content
-  chatInput.style.height=`${inputInitHeight}px`;
+chatInput.addEventListener("input", () => {
+  chatInput.style.height = `${inputInitHeight}px`;
   chatInput.style.height = `${chatInput.scrollHeight}px`;
-})
-sendChatBtn.addEventListener("click", handleChat);
+});
+
+sendChatBtn.addEventListener("click", () => handleChat(chatInput.value.trim()));
+
 chatbotCloseBtn.addEventListener("click", () =>
   document.body.classList.remove("show-chatbot")
 );
 chatbotToggler.addEventListener("click", () =>
   document.body.classList.toggle("show-chatbot")
 );
+
+document
+  .querySelector(".support-service")
+  .addEventListener("click", () => handleChat("Support Service"));
+document
+  .querySelector(".issue-ticket")
+  .addEventListener("click", () => handleChat("Issue a Ticket"));
