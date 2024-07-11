@@ -47,6 +47,14 @@ body {
     opacity: 1;
 }
 
+.chat-input {
+  display: flex;
+}
+
+.chat-input.hidden {
+  display: none;
+}
+
 .chatbot {
     width: 420px;
     position: fixed;

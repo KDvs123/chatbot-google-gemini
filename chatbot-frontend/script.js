@@ -3,6 +3,7 @@ const sendChatBtn = document.querySelector(".chat-input span");
 const chatbox = document.querySelector(".chatbox");
 const chatbotToggler = document.querySelector(".chatbot-toggler");
 const chatbotCloseBtn = document.querySelector(".close-btn");
+const chatInputContainer = document.querySelector(".chat-input");
 
 let userMessage;
 const inputInitHeight = chatInput.scrollHeight;
@@ -68,30 +69,52 @@ const handleInitialGreeting = () => {
     "Hi! Welcome to Workhub 24. How can I help you with that?";
   chatbox.appendChild(createChatLi(initialMessage, "incoming"));
   chatbox.scrollTo(0, chatbox.scrollHeight);
+  chatInputContainer.classList.remove("hidden"); // Show the text area
 };
 
-chatInput.addEventListener("input", () => {
-  chatInput.style.height = `${inputInitHeight}px`;
-  chatInput.style.height = `${chatInput.scrollHeight}px`;
-});
-
-sendChatBtn.addEventListener("click", () => handleChat(chatInput.value.trim()));
-
-chatbotCloseBtn.addEventListener("click", () =>
-  document.body.classList.remove("show-chatbot")
-);
-chatbotToggler.addEventListener("click", () =>
-  document.body.classList.toggle("show-chatbot")
-);
+const hideButtons = () => {
+  document.querySelector(".button-group").style.display = "none"; // Hide the buttons
+};
 
 document.querySelector(".support-service").addEventListener("click", () => {
   const supportMessage = "Support Service";
   chatbox.appendChild(createChatLi(supportMessage, "outgoing"));
   chatbox.scrollTo(0, chatbox.scrollHeight);
+  hideButtons(); // Hide the buttons after clicking
   setTimeout(handleInitialGreeting, 600); // Call handleInitialGreeting after a delay
 });
 
 document.querySelector(".issue-ticket").addEventListener("click", () => {
   handleChat("Issue a Ticket");
+  hideButtons(); // Hide the buttons after clicking
   setTimeout(handleInitialGreeting, 600); // Also handle initial greeting after issuing a ticket
 });
+
+// Initially hide the chat input container
+chatInputContainer.classList.add("hidden");
+
+// Show the text area when the chat is initiated
+document.body.addEventListener("click", (e) => {
+  if (e.target.matches(".chatbot-toggler") || e.target.matches(".send-btn")) {
+    chatInputContainer.classList.remove("hidden");
+  }
+});
+
+// Event listener to adjust textarea height dynamically
+chatInput.addEventListener("input", () => {
+  chatInput.style.height = `${inputInitHeight}px`;
+  chatInput.style.height = `${chatInput.scrollHeight}px`;
+});
+
+// Event listener for sending chat message
+sendChatBtn.addEventListener("click", () => handleChat(chatInput.value.trim()));
+
+// Close chatbot event listener
+chatbotCloseBtn.addEventListener("click", () =>
+  document.body.classList.remove("show-chatbot")
+);
+
+// Toggle chatbot visibility event listener
+chatbotToggler.addEventListener("click", () =>
+  document.body.classList.toggle("show-chatbot")
+);
