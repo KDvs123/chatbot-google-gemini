@@ -62,6 +62,14 @@ const handleChat = (userMessage) => {
   }, 600);
 };
 
+// Function to handle initial greeting without triggering generateResponse immediately
+const handleInitialGreeting = () => {
+  const initialMessage =
+    "Hi! Welcome to Workhub 24. How can I help you with that?";
+  chatbox.appendChild(createChatLi(initialMessage, "incoming"));
+  chatbox.scrollTo(0, chatbox.scrollHeight);
+};
+
 chatInput.addEventListener("input", () => {
   chatInput.style.height = `${inputInitHeight}px`;
   chatInput.style.height = `${chatInput.scrollHeight}px`;
@@ -76,9 +84,14 @@ chatbotToggler.addEventListener("click", () =>
   document.body.classList.toggle("show-chatbot")
 );
 
-document
-  .querySelector(".support-service")
-  .addEventListener("click", () => handleChat("Support Service"));
-document
-  .querySelector(".issue-ticket")
-  .addEventListener("click", () => handleChat("Issue a Ticket"));
+document.querySelector(".support-service").addEventListener("click", () => {
+  const supportMessage = "Support Service";
+  chatbox.appendChild(createChatLi(supportMessage, "outgoing"));
+  chatbox.scrollTo(0, chatbox.scrollHeight);
+  setTimeout(handleInitialGreeting, 600); // Call handleInitialGreeting after a delay
+});
+
+document.querySelector(".issue-ticket").addEventListener("click", () => {
+  handleChat("Issue a Ticket");
+  setTimeout(handleInitialGreeting, 600); // Also handle initial greeting after issuing a ticket
+});
