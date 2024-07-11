@@ -19,10 +19,8 @@ const createChatLi = (message, className) => {
   return chatLi;
 };
 
-// script.js
-
 const generateResponse = (incomingChatLi, userMessage) => {
-  const API_URL = "http://127.0.0.1:5000/ml_model";
+  const API_URL = "http://127.0.0.1:5000/ml_model"; // Change to your backend URL
   const messageElement = incomingChatLi.querySelector("p");
 
   const requestOptions = {

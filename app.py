@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
+import logging
 import traceback
 from ml_model import setup_ml_model
 
@@ -25,8 +26,8 @@ def ml_model():
         
         return jsonify({"response": response_message})
     except Exception as e:
-        print(f"Error: {str(e)}")
-        print(traceback.format_exc())
+        logging.error(f"Error: {str(e)}")
+        logging.error(traceback.format_exc())
         return jsonify({"error": "Internal Server Error"}), 500
 
 if __name__ == '__main__':
